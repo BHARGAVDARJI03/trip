@@ -242,7 +242,6 @@
 <body>
 
 <div class="hero">
-  <div class="eyebrow">Two seats, one flight</div>
   <h1>Where should<br>we go <em>first?</em></h1>
   <p>Five countries. Vote on the country — then open it up and vote on the actual cities inside it too.</p>
 </div>
@@ -263,6 +262,7 @@
         <div class="field">
           <label>How many days</label>
           <div class="chip-row" data-group="days">
+            <button class="chip" data-value="1–4 days">1–4 days</button>
             <button class="chip" data-value="5–7 days">5–7 days</button>
             <button class="chip" data-value="8–10 days">8–10 days</button>
             <button class="chip" data-value="10–14 days">10–14 days</button>
@@ -310,13 +310,9 @@
     </div>
   </div>
 
-  <div class="section-label" style="margin-top:56px;"><span class="num">03</span> So far</div>
-  <div class="section-title">What's been picked</div>
-  <div id="summaryBox"></div>
 
 </div>
 
-<footer>shared with whoever has this link · visa rules change often, double-check official sources before booking</footer>
 
 <script>
 const DESTINATIONS = [
@@ -600,6 +596,7 @@ function cityNameById(countryId, cityId){
 }
 
 function renderSummary(){
+  if(!summaryBox) return;
   const voteCount = Object.keys(state.votes).length;
   const latestEntry = state.entries[state.entries.length - 1];
   const anyCityVotes = Object.values(state.cityVotes).some(obj => Object.keys(obj).length > 0);

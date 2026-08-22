@@ -558,30 +558,32 @@ submitBtn.addEventListener('click', async () => {
   state.entries.push(entry);
   submitBtn.disabled = true;
   submitBtn.textContent = 'Sending...';
+
+  // Always attempt to save, but never let a storage failure block the
+  // birthday reveal — that's the whole point of the button.
   try{
     await save();
-    submitBtn.textContent = 'Sent ✓';
-    document.getElementById('notesInput').value = '';
-    document.getElementById('budgetInput').value = '';
-    setTimeout(() => { showBirthdayPage(); }, 500);
   } catch(err){
-    submitBtn.textContent = 'Stamp & send';
-    submitBtn.disabled = false;
-    submitNote.textContent = 'Something went wrong — try again';
+    console.error('Save failed, continuing anyway:', err);
   }
+
+  submitBtn.textContent = 'Sent ✓';
+  document.getElementById('notesInput').value = '';
+  document.getElementById('budgetInput').value = '';
   renderSummary();
+  setTimeout(() => { showBirthdayPage(); }, 500);
 });
 
 function showBirthdayPage(){
   document.body.innerHTML = `
-    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px;">
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px;background:#12302B;">
       <div style="max-width:650px;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--marigold);margin-bottom:22px;">A little something after your answers</div>
-        <h1 style="font-family:'Fraunces',serif;font-size:clamp(2.6rem,7vw,5rem);line-height:1.05;margin:0 0 24px;">Happy Birthday <em style="color:var(--marigold);font-style:italic;font-weight:400;">❤️</em></h1>
-        <p style="font-family:'Work Sans',sans-serif;color:var(--ink-dim);font-size:18px;line-height:1.8;margin:0;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#E7A23C;margin-bottom:22px;">A little something after your answers</div>
+        <h1 style="font-family:'Fraunces',serif;font-size:clamp(2.6rem,7vw,5rem);line-height:1.05;margin:0 0 24px;color:#F2E9D4;">Happy Birthday <em style="color:#E7A23C;font-style:italic;font-weight:400;">❤️</em></h1>
+        <p style="font-family:'Work Sans',sans-serif;color:#C7CCB8;font-size:18px;line-height:1.8;margin:0;">
           I know it's late, and I'm really sorry. But I still wanted to wish you a very happy birthday and make you something a little special.<br><br>And I'm really sorry for not answering you for a whole month. I know that's a long time, and I genuinely feel bad about it. ❤️
         </p>
-        <p style="font-family:'Work Sans',sans-serif;color:var(--ink-dim);font-size:16px;line-height:1.8;margin:22px 0 0;">
+        <p style="font-family:'Work Sans',sans-serif;color:#C7CCB8;font-size:16px;line-height:1.8;margin:22px 0 0;">
           Now that you've picked where we should go, maybe we can actually make one of these trips happen. ❤️
         </p>
       </div>
@@ -640,26 +642,13 @@ function escapeHtml(str){
 }
 
 async function save(){
-  try{
-    // Use the provided shared storage when available.
-    if (window.storage && typeof window.storage.set === 'function') {
-      await window.storage.set(STORAGE_KEY, JSON.stringify(state), true);
-      return;
-    }
-
-    // GitHub Pages/static hosting fallback.
-    // This keeps the selections on the current browser so the form can
-    // still be submitted and the birthday page can be shown.
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch(err){
-    console.error('Storage error:', err);
-    // Do not block the birthday page if storage is unavailable.
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch(e) {
-      console.error('Local storage error:', e);
-    }
+  // Use the provided shared storage when available (Claude artifact sandbox only).
+  if (window.storage && typeof window.storage.set === 'function') {
+    await window.storage.set(STORAGE_KEY, JSON.stringify(state), true);
+    return;
   }
+  // GitHub Pages / static hosting fallback — keep selections in this browser.
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
 async function load(){

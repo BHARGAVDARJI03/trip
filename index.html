@@ -544,6 +544,8 @@ document.querySelectorAll('.chip-row').forEach(row => {
 
 submitBtn.addEventListener('click', async () => {
   const entry = {
+    countryVotes: JSON.parse(JSON.stringify(state.votes)),
+    cityVotes: JSON.parse(JSON.stringify(state.cityVotes)),
     days: selections.days,
     budget: document.getElementById('budgetInput').value.trim(),
     when: selections.when,
@@ -551,23 +553,75 @@ submitBtn.addEventListener('click', async () => {
     notes: document.getElementById('notesInput').value.trim(),
     timestamp: Date.now()
   };
-  state.entries.push(entry);
+
+  const countryYes = Object.keys(entry.countryVotes)
+    .filter(k => entry.countryVotes[k] === 'yes')
+    .map(k => DESTINATIONS.find(d => d.id === k)?.region || k);
+  const countryMaybe = Object.keys(entry.countryVotes)
+    .filter(k => entry.countryVotes[k] === 'maybe')
+    .map(k => DESTINATIONS.find(d => d.id === k)?.region || k);
+
+  const cityYes = [];
+  Object.keys(entry.cityVotes || {}).forEach(countryId => {
+    Object.keys(entry.cityVotes[countryId] || {}).forEach(cityId => {
+      if(entry.cityVotes[countryId][cityId] === 'yes'){
+        cityYes.push(cityNameById(countryId, cityId));
+      }
+    });
+  });
+
+  const data = new URLSearchParams();
+  data.append('countries_yes', countryYes.join(', ') || '-');
+  data.append('countries_maybe', countryMaybe.join(', ') || '-');
+  data.append('cities_yes', cityYes.join(', ') || '-');
+  data.append('days', entry.days || '-');
+  data.append('budget', entry.budget || '-');
+  data.append('when', entry.when || '-');
+  data.append('vibe', entry.vibe.join(', ') || '-');
+  data.append('notes', entry.notes || '-');
+  data.append('submitted_at', new Date(entry.timestamp).toLocaleString());
+
   submitBtn.disabled = true;
   submitBtn.textContent = 'Sending...';
+  submitNote.textContent = 'Sending your answers...';
 
-  // Always attempt to save, but never let a storage failure block the
-  // birthday reveal — that's the whole point of the button.
-  try{
-    await save();
-  } catch(err){
-    console.error('Save failed, continuing anyway:', err);
+  const bodyString = data.toString();
+
+  try {
+    const response = await fetch('https://formspree.io/f/mljrvpga', {
+      method: 'POST',
+      body: bodyString,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    if (!response.ok) {
+      let message = 'Formspree could not receive the submission.';
+      try {
+        const result = await response.json();
+        if (result && result.errors && result.errors.length) {
+          message = result.errors.map(error => error.message).join(', ');
+        }
+      } catch (_) {}
+      throw new Error(message);
+    }
+
+    state.entries.push(entry);
+    try { await save(); } catch (storageError) { console.warn('Local storage unavailable:', storageError); }
+
+    submitBtn.textContent = 'Sent ✓';
+    document.getElementById('notesInput').value = '';
+    document.getElementById('budgetInput').value = '';
+    setTimeout(() => { showBirthdayPage(); }, 500);
+
+  } catch (err) {
+    console.error('Formspree submission error:', err);
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Stamp & send';
+    submitNote.textContent = 'Something went wrong — please try again.';
   }
-
-  submitBtn.textContent = 'Sent ✓';
-  document.getElementById('notesInput').value = '';
-  document.getElementById('budgetInput').value = '';
-  renderSummary();
-  setTimeout(() => { showBirthdayPage(); }, 500);
 });
 
 function showBirthdayPage(){

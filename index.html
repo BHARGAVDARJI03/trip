@@ -230,6 +230,54 @@
 
   footer{text-align:center; margin-top:60px; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-dim); opacity:.6;}
 
+  /* ---------- THANK YOU MODAL ---------- */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(9,20,18,0.75);
+    align-items:center; justify-content:center; z-index:100; padding:24px;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    padding:40px 36px; text-align:center; max-width:360px; width:100%;
+  }
+  .modal-stamp{
+    width:56px; height:56px; border:2px dashed var(--marigold); border-radius:50%;
+    display:flex; align-items:center; justify-content:center; margin:0 auto 18px;
+    color:var(--marigold); font-size:24px;
+  }
+  .modal-card h3{font-family:'Fraunces', serif; font-size:22px; font-weight:600; margin:0 0 8px;}
+  .modal-card p{color:var(--ink-dim); font-size:14px; margin:0 0 24px;}
+  .modal-close{
+    background:var(--coral); color:#fff; border:none; padding:12px 28px; border-radius:24px;
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:.05em; text-transform:uppercase;
+    cursor:pointer;
+  }
+
+  /* ---------- OWNER EXPORT PANEL ---------- */
+  .owner-zone{max-width:960px; margin:70px auto 0; padding:0 24px; text-align:center;}
+  .owner-toggle{
+    background:transparent; border:1px dashed var(--line); color:var(--ink-dim);
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.04em;
+    padding:8px 16px; border-radius:16px; cursor:pointer; transition:all .2s;
+  }
+  .owner-toggle:hover{border-color:var(--marigold); color:var(--marigold);}
+  .owner-panel{display:none; text-align:left; margin-top:16px;}
+  .owner-panel.show{display:block;}
+  .owner-panel-head{
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-dim); margin-bottom:8px;
+  }
+  .owner-actions{display:flex; gap:8px;}
+  .owner-btn{
+    background:var(--surface-2); border:1px solid var(--line); color:var(--ink);
+    font-family:'IBM Plex Mono', monospace; font-size:10px; padding:6px 12px; border-radius:14px; cursor:pointer;
+  }
+  .owner-btn:hover{border-color:var(--marigold); color:var(--marigold);}
+  .owner-textarea{
+    width:100%; min-height:220px; background:var(--surface-2); border:1px solid var(--line); border-radius:6px;
+    color:var(--ink); font-family:'IBM Plex Mono', monospace; font-size:11px; padding:14px; resize:vertical;
+  }
+
   @media (max-width:640px){
     .card-body{grid-template-columns:1fr;}
     .cities-grid{grid-template-columns:1fr;}
@@ -242,7 +290,6 @@
 <body>
 
 <div class="hero">
-  <div class="eyebrow">Two seats, one flight</div>
   <h1>Where should<br>we go <em>first?</em></h1>
   <p>Five countries. Vote on the country — then open it up and vote on the actual cities inside it too.</p>
 </div>
@@ -305,18 +352,35 @@
 
       <div class="submit-row">
         <button class="submit-btn" id="submitBtn">Stamp & send</button>
-        <span class="submit-note" id="submitNote"></span>
+        <span class="submit-note" id="submitNote">Vote on the countries/cities above first, then hit send</span>
       </div>
     </div>
   </div>
 
-  <div class="section-label" style="margin-top:56px;"><span class="num">03</span> So far</div>
-  <div class="section-title">What's been picked</div>
-  <div id="summaryBox"></div>
-
 </div>
 
-<footer>shared with whoever has this link · visa rules change often, double-check official sources before booking</footer>
+<div class="modal-overlay" id="thanksModal">
+  <div class="modal-card">
+    <div class="modal-stamp">✓</div>
+    <h3>Thanks for filling this out</h3>
+    <p>Your picks are saved.</p>
+    <button class="modal-close" id="modalCloseBtn">Close</button>
+  </div>
+</div>
+
+<div class="owner-zone">
+  <button class="owner-toggle" id="ownerToggle">View saved answers</button>
+  <div class="owner-panel" id="ownerPanel">
+    <div class="owner-panel-head">
+      <span>Local answers saved in this browser</span>
+      <div class="owner-actions">
+        <button class="owner-btn" id="copyBtn">Copy</button>
+        <button class="owner-btn" id="downloadBtn">Download .txt</button>
+      </div>
+    </div>
+    <textarea class="owner-textarea" id="ownerTextarea" readonly></textarea>
+  </div>
+</div>
 
 <script>
 const DESTINATIONS = [
@@ -328,12 +392,12 @@ const DESTINATIONS = [
     tags:[{t:'Heavy on mountains',c:'nature'},{t:'War Remnants Museum',c:'museum'},{t:'Backpacker-friendly'},{t:'Cheapest option'}],
     flight:'~2 hrs direct from Shenzhen', price:'~¥2,050 round trip', visa:'E-visa required — apply online, ~90 days, 3–5 day approval',
     cities:[
-      {id:'ha-giang', name:'Ha Giang Loop', blurb:'This is the one where you rent a scooter and just disappear into the mountains for a few days. The roads twist along cliff edges above rice terraces, and you sleep in homestays with families in villages that barely see tourists. It\'s tiring and a little scary at times, but it\'s the kind of trip you\'ll still be talking about years later.'},
-      {id:'halong', name:'Ha Long Bay & Ninh Binh', blurb:'Ha Long Bay is the postcard: thousands of limestone islands rising straight out of green water, best seen from the deck of a slow boat, ideally with an overnight on board. Ninh Binh is the quieter, cheaper version of the same scenery — rowboats through caves and rivers, way fewer crowds.'},
+      {id:'ha-giang', name:'Ha Giang Loop', blurb:'This is the one where you explore the mountains by motorbike — either riding yourself if you\'re properly licensed, or joining a guided loop if not. The roads twist along cliff edges above rice terraces, and you sleep in homestays with families in villages that barely see tourists. It\'s tiring and a little scary at times, but it\'s the kind of trip you\'ll still be talking about years later.'},
+      {id:'halong', name:'Ha Long Bay & Ninh Binh', blurb:'Ha Long Bay is the postcard: thousands of limestone islands and islets rising straight out of green water, best seen from the deck of a slow boat, ideally with an overnight on board. Ninh Binh offers similar dramatic karst scenery on land, with river and cave boat trips and far fewer crowds.'},
       {id:'sapa', name:'Sapa', blurb:'Up in the northern hills, this is where you go to actually walk — rice terraces stepping down mountainsides, and treks that end with tea in a village home. It gets properly cold at night, which after weeks of Vietnamese heat is oddly nice.'},
-      {id:'hoi-an', name:'Hoi An & Hue', blurb:'Hoi An is small enough to explore entirely on foot — an old town lit by paper lanterns every evening, tailors who\'ll make you a suit overnight, and some of the best food in the country. Hue, a couple hours away, has the crumbling old imperial citadel if you want a slower, more historical day.'},
+      {id:'hoi-an', name:'Hoi An & Hue', blurb:'Hoi An is small enough to explore entirely on foot — an old town lit by paper lanterns every evening, tailors who can make clothes remarkably quickly, and some of the best food in the country. Hue, a couple hours away, has the crumbling old imperial citadel if you want a slower, more historical day.'},
       {id:'hcmc', name:'Ho Chi Minh City', blurb:'Loud, fast, and a little overwhelming after the north — this is where Vietnam feels most like a modern city. The War Remnants Museum and the Cu Chi Tunnels close by are hard to skip if you care about the country\'s history, even though they\'re heavy visits.'},
-      {id:'phong-nha', name:'Phong Nha', blurb:'Some of the biggest cave systems on the planet are here, including one you can actually camp inside. It\'s further off the usual route, which is exactly why it still feels a bit undiscovered.'}
+      {id:'phong-nha', name:'Phong Nha', blurb:'Some of the world\'s largest cave systems are here, including Son Doong, where multi-day expedition camping is possible with a permit. It\'s further off the usual route, which is exactly why it still feels a bit undiscovered.'}
     ],
     icon:`<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 34c8-4 28-4 36 0"/><path d="M14 34l2-16 4 16"/><path d="M26 34l3-20 4 20"/><path d="M10 40h28"/></svg>`
   },
@@ -348,7 +412,7 @@ const DESTINATIONS = [
       {id:'bromo', name:'Mount Bromo & Ijen', blurb:'You start hiking at 2am in the dark, cold and half asleep, and then the sun comes up over an active volcano crater and it\'s worth every bit of it. A night or two later you climb Ijen to see its sulfur lake glow an eerie blue before dawn — genuinely one of those things people don\'t believe is real until they see it.'},
       {id:'ubud', name:'Ubud', blurb:'This is Bali\'s slow-down town — rice terraces you can walk through, yoga studios on every corner, and a pace that feels miles away from the beach clubs on the coast. Good place to base yourself for a few days before moving on.'},
       {id:'nusa-penida', name:'Nusa Penida & Gili Islands', blurb:'A short boat ride from Bali gets you cliffside viewpoints and some of the clearest snorkeling water you\'ll find anywhere. The Gilis are car-free — everyone gets around by bike or horse cart, which changes the whole mood of the place.'},
-      {id:'lombok', name:'Lombok', blurb:'Basically what Bali looked like before it got busy — same kind of beaches and volcanoes, far fewer people. Worth it if you want a quieter few days.'},
+      {id:'lombok', name:'Lombok', blurb:'A quieter alternative to Bali, with beaches, waterfalls, traditional villages and Mount Rinjani, and far fewer crowds. Worth it if you want a slower few days.'},
       {id:'yogyakarta', name:'Yogyakarta & Borobudur', blurb:'Wake up before sunrise and watch it break over Borobudur, the largest Buddhist temple on earth, mist still sitting in the jungle below. Yogyakarta itself is Java\'s cultural heart, with genuinely good museums if that\'s your thing.'},
       {id:'komodo', name:'Komodo National Park', blurb:'A multi-day boat trip through islands, ending with actual wild Komodo dragons and a beach that\'s pink because of the coral. It\'s the furthest thing from a lazy beach holiday — more like a small expedition.'}
     ],
@@ -363,10 +427,10 @@ const DESTINATIONS = [
     flight:'~2h20m direct from Shenzhen', price:'~¥1,850 round trip', visa:'Visa-free — 14 days, Manila/Cebu flights only, not extendable',
     cities:[
       {id:'el-nido', name:'El Nido', blurb:'This is the picture everyone has in their head when they think of the Philippines — hidden lagoons behind limestone cliffs that you reach by island-hopping boat, jumping between beaches all day.'},
-      {id:'coron', name:'Coron', blurb:'A different side of Palawan, known for diving into old shipwrecks and kayaking through a lake that sits inside a crater. Less about lying on a beach, more about getting in the water.'},
+      {id:'coron', name:'Coron', blurb:'A different side of Palawan, known for diving into old shipwrecks and kayaking through spectacular limestone lakes and lagoons. Less about lying on a beach, more about getting in the water.'},
       {id:'siargao', name:'Siargao', blurb:'The surf island, and it feels like it — slower mornings, cheap seafood dinners, and a backpacker crowd that\'s there to stay a while, not just pass through.'},
       {id:'bohol', name:'Bohol', blurb:'Famous for two very different things: the Chocolate Hills, hundreds of oddly perfect mounds across the landscape, and tiny tarsiers with enormous eyes that you\'ll see up close at a sanctuary.'},
-      {id:'cebu', name:'Cebu', blurb:'A good base with a big airport, waterfalls you can canyon-jump into, and a sardine run you can dive right through if the timing works out.'},
+      {id:'cebu', name:'Cebu', blurb:'A good base with a big airport, canyoneering through the Kawasan Falls area, and a sardine run you can dive right through if the timing works out.'},
       {id:'boracay', name:'Boracay', blurb:'The most polished of the group — white sand, sunset bars, easy resorts. Good for an easy last stop if you want comfort at the end of the trip.'}
     ],
     icon:`<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 32c10 6 26 6 36 0"/><path d="M24 30V10"/><path d="M24 12c6 0 10 3 12 7-6 2-10-1-12-7z"/><path d="M24 16c-5 1-8 4-9 8 5 1 8-2 9-8z"/></svg>`
@@ -383,7 +447,7 @@ const DESTINATIONS = [
       {id:'penang', name:'George Town, Penang', blurb:'This is where you come to eat — hawker stalls, colonial shophouses, and street art tucked into every alley. Malaysians will tell you this is the best food in the country, and it\'s hard to argue.'},
       {id:'cameron', name:'Cameron Highlands', blurb:'A sudden drop in temperature and rolling tea plantations that go on forever — a genuinely nice break if you\'ve been sweating through lowland heat for a week straight.'},
       {id:'langkawi', name:'Langkawi / Perhentian Islands', blurb:'Langkawi is the easy, duty-free beach resort option. The Perhentians are smaller, quieter, and better if diving matters more to you than nightlife.'},
-      {id:'sabah', name:'Sabah, Borneo', blurb:'A completely different trip inside the trip — climbing Mount Kinabalu, and meeting rehabilitated orangutans at Sepilok. Needs extra days, but it\'s the closest thing to real jungle on this whole list.'},
+      {id:'sabah', name:'Sabah, Borneo', blurb:'A completely different trip inside the trip — climbing Mount Kinabalu, and meeting rehabilitated orangutans at Sepilok. Needs extra days, but it\'s one of the best places on this list for rainforest and wildlife.'},
       {id:'sarawak', name:'Sarawak, Borneo', blurb:'Caves and rainforest national parks that see far fewer visitors than Sabah — for when you want Borneo without any of the crowds.'}
     ],
     icon:`<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 40V16h6v24M14 40V16l4-6 4 6v24M22 40V16h6v24M28 40V22h6v18"/><path d="M17 10h2M25 10h2"/><path d="M4 40h40"/></svg>`
@@ -397,12 +461,12 @@ const DESTINATIONS = [
     flight:'~3 hrs direct from Shenzhen', price:'~¥1,900 round trip', visa:'Visa-free — 30 days',
     visited:true,
     cities:[
-      {id:'chiangmai', name:'Chiang Mai & Chiang Rai', blurb:'The mountain north — old temples, a laid-back night market scene, and noticeably cooler air than anywhere else in the country.'},
+      {id:'chiangmai', name:'Chiang Mai & Chiang Rai', blurb:'The mountain north — old temples, a laid-back night market scene, and noticeably cooler air than Thailand\'s lowland and southern destinations, especially during the cool season.'},
       {id:'bangkok', name:'Bangkok', blurb:'Chaotic in a way that grows on you — temples next to street food carts next to rooftop bars, and the city you\'ll pass through no matter what else is on the itinerary.'},
       {id:'krabi', name:'Krabi & Railay', blurb:'Limestone cliffs rising straight out of turquoise water, a beach you can only reach by longtail boat, and some of the best rock climbing in Southeast Asia if that\'s your thing.'},
       {id:'phiphi', name:'Phi Phi Islands', blurb:'Busy, touristy, and still stunning — the snorkeling bay everyone shows you photos of, for good reason.'},
-      {id:'kohtao', name:'Koh Tao & Koh Phangan', blurb:'Koh Tao is one of the cheapest places in the world to get a diving certification. Koh Phangan next door is where the Full Moon Party happens, if that\'s ever been on your list.'},
-      {id:'khaosok', name:'Khao Sok', blurb:'Ancient rainforest older than the Amazon, with a jungle lake where you sleep in floating huts — quiet in a way the islands aren\'t.'}
+      {id:'kohtao', name:'Koh Tao & Koh Phangan', blurb:'Koh Tao is known for relatively affordable scuba-diving courses and certifications. Koh Phangan next door is where the Full Moon Party happens, if that\'s ever been on your list.'},
+      {id:'khaosok', name:'Khao Sok', blurb:'Ancient rainforest and a spectacular jungle lake where you sleep in floating huts — quiet in a way the islands aren\'t.'}
     ],
     icon:`<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 40h28"/><path d="M24 6c-4 6-4 10 0 14 4-4 4-8 0-14z"/><path d="M18 26c0-4 3-6 6-6s6 2 6 6v14H18z"/><path d="M14 40V32h20v8"/></svg>`
   }
@@ -414,7 +478,7 @@ const selections = { days:null, when:null, vibe:[] };
 const openPanels = {};
 
 const destList = document.getElementById('destList');
-const summaryBox = document.getElementById('summaryBox');
+
 const submitBtn = document.getElementById('submitBtn');
 const submitNote = document.getElementById('submitNote');
 
@@ -486,8 +550,7 @@ function renderDestinations(){
         openPanels[destId] = true;
       }
       renderDestinations();
-      renderSummary();
-      await save();
+      try{ await save(); } catch(err){ /* storage unavailable outside Claude artifact view, ignore */ }
       if(choice === 'yes' && !wasSame){
         const panel = destList.querySelector(`.card[data-id="${destId}"] .cities-panel`);
         if(panel){
@@ -513,8 +576,7 @@ function renderDestinations(){
         state.cityVotes[countryId][cityId] = choice;
       }
       renderDestinations();
-      renderSummary();
-      await save();
+      try{ await save(); } catch(err){ /* storage unavailable outside Claude artifact view, ignore */ }
     });
   });
 
@@ -546,8 +608,157 @@ document.querySelectorAll('.chip-row').forEach(row => {
   });
 });
 
+function buildExportText(){
+  if(state.entries.length === 0){
+    return 'No submissions yet.';
+  }
+  const sorted = [...state.entries].sort((a,b) => b.timestamp - a.timestamp);
+  return sorted.map((e, idx) => {
+    const countryYes = Object.keys(e.countryVotes||{}).filter(k => e.countryVotes[k]==='yes').map(countryNameById);
+    const countryMaybe = Object.keys(e.countryVotes||{}).filter(k => e.countryVotes[k]==='maybe').map(countryNameById);
+    const countryNo = Object.keys(e.countryVotes||{}).filter(k => e.countryVotes[k]==='no').map(countryNameById);
+    const cityYes = [];
+    const cityMaybe = [];
+    Object.keys(e.cityVotes||{}).forEach(countryId => {
+      Object.keys(e.cityVotes[countryId]).forEach(cityId => {
+        const v = e.cityVotes[countryId][cityId];
+        if(v === 'yes') cityYes.push(cityNameById(countryId, cityId));
+        if(v === 'maybe') cityMaybe.push(cityNameById(countryId, cityId));
+      });
+    });
+    const dateStr = new Date(e.timestamp).toLocaleString();
+    return [
+      `Submission ${sorted.length - idx} — ${dateStr}`,
+      `Countries - Yes: ${countryYes.join(', ') || '-'}`,
+      `Countries - Maybe: ${countryMaybe.join(', ') || '-'}`,
+      `Countries - No: ${countryNo.join(', ') || '-'}`,
+      `Cities - Yes: ${cityYes.join(', ') || '-'}`,
+      `Cities - Maybe: ${cityMaybe.join(', ') || '-'}`,
+      `Days: ${e.days || '-'}`,
+      `Budget: ${e.budget || '-'}`,
+      `When: ${e.when || '-'}`,
+      `Vibe: ${(e.vibe||[]).join(', ') || '-'}`,
+      `Notes: ${e.notes || '-'}`,
+      ''
+    ].join('\n');
+  }).join('\n');
+}
+
+function refreshOwnerExport(){
+  const ta = document.getElementById('ownerTextarea');
+  if(ta) ta.value = buildExportText();
+}
+
+document.getElementById('ownerToggle').addEventListener('click', () => {
+  const panel = document.getElementById('ownerPanel');
+  panel.classList.toggle('show');
+  if(panel.classList.contains('show')) refreshOwnerExport();
+});
+
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const ta = document.getElementById('ownerTextarea');
+  try{
+    await navigator.clipboard.writeText(ta.value);
+    const btn = document.getElementById('copyBtn');
+    const original = btn.textContent;
+    btn.textContent = 'Copied';
+    setTimeout(() => { btn.textContent = original; }, 1200);
+  } catch(err){
+    ta.select();
+    document.execCommand('copy');
+  }
+});
+
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const text = buildExportText();
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'se-asia-trip-answers.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
 submitBtn.addEventListener('click', async () => {
+  // Create a real Formspree form dynamically so the existing custom UI
+  // does not need to be redesigned.
+  let form = document.getElementById('formspree-submit-form');
+
+  if (!form) {
+    form = document.createElement('form');
+    form.id = 'formspree-submit-form';
+    form.action = 'https://formspree.io/f/mljrvpga';
+    form.method = 'POST';
+    form.style.display = 'none';
+    document.body.appendChild(form);
+  }
+
+  form.innerHTML = '';
+
+  const addField = (name, value) => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = name;
+    input.value = value == null || value === '' ? '-' : String(value);
+    form.appendChild(input);
+  };
+
+  const countryYes = Object.keys(state.votes)
+    .filter(k => state.votes[k] === 'yes')
+    .map(countryNameById);
+
+  const countryMaybe = Object.keys(state.votes)
+    .filter(k => state.votes[k] === 'maybe')
+    .map(countryNameById);
+
+  const countryNo = Object.keys(state.votes)
+    .filter(k => state.votes[k] === 'no')
+    .map(countryNameById);
+
+  const cityYes = [];
+  const cityMaybe = [];
+  const cityNo = [];
+
+  Object.keys(state.cityVotes || {}).forEach(countryId => {
+    Object.keys(state.cityVotes[countryId] || {}).forEach(cityId => {
+      const vote = state.cityVotes[countryId][cityId];
+      const cityName = cityNameById(countryId, cityId);
+
+      if (vote === 'yes') cityYes.push(cityName);
+      if (vote === 'maybe') cityMaybe.push(cityName);
+      if (vote === 'no') cityNo.push(cityName);
+    });
+  });
+
+  addField('countries_yes', countryYes.join(', '));
+  addField('countries_maybe', countryMaybe.join(', '));
+  addField('countries_no', countryNo.join(', '));
+
+  addField('cities_yes', cityYes.join(', '));
+  addField('cities_maybe', cityMaybe.join(', '));
+  addField('cities_no', cityNo.join(', '));
+
+  addField('days', selections.days);
+  addField('budget', document.getElementById('budgetInput').value.trim());
+  addField('when', selections.when);
+  addField('vibe', selections.vibe.join(', '));
+  addField('notes', document.getElementById('notesInput').value.trim());
+  addField('submitted_at', new Date().toLocaleString());
+
+  // This hidden form uses Formspree's normal POST endpoint.
+  // The browser handles the submission directly; no custom fetch/CORS
+  // handling is needed.
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Sending...';
+  submitNote.textContent = 'Sending your answers...';
+
+  // Save a local copy before leaving the page.
   const entry = {
+    countryVotes: JSON.parse(JSON.stringify(state.votes)),
+    cityVotes: JSON.parse(JSON.stringify(state.cityVotes)),
     days: selections.days,
     budget: document.getElementById('budgetInput').value.trim(),
     when: selections.when,
@@ -555,21 +766,20 @@ submitBtn.addEventListener('click', async () => {
     notes: document.getElementById('notesInput').value.trim(),
     timestamp: Date.now()
   };
+
   state.entries.push(entry);
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'Sending...';
-  try{
+
+  try {
     await save();
-    submitBtn.textContent = 'Sent ✓';
-    document.getElementById('notesInput').value = '';
-    document.getElementById('budgetInput').value = '';
-    setTimeout(() => { submitBtn.textContent = 'Stamp & send'; submitBtn.disabled = false; }, 1400);
-  } catch(err){
-    submitBtn.textContent = 'Stamp & send';
-    submitBtn.disabled = false;
-    submitNote.textContent = 'Something went wrong — try again';
+  } catch (err) {
+    console.warn('Local storage unavailable:', err);
   }
-  renderSummary();
+
+  form.submit();
+});
+
+document.getElementById('modalCloseBtn').addEventListener('click', () => {
+  document.getElementById('thanksModal').classList.remove('show');
 });
 
 function cityNameById(countryId, cityId){
@@ -579,41 +789,12 @@ function cityNameById(countryId, cityId){
   return city ? city.name : cityId;
 }
 
-function renderSummary(){
-  const voteCount = Object.keys(state.votes).length;
-  const latestEntry = state.entries[state.entries.length - 1];
-  const anyCityVotes = Object.values(state.cityVotes).some(obj => Object.keys(obj).length > 0);
-  if(voteCount === 0 && !latestEntry && !anyCityVotes){
-    summaryBox.innerHTML = `<div class="empty">Nothing picked yet</div>`;
-    return;
-  }
-  const yesList = DESTINATIONS.filter(d => state.votes[d.id] === 'yes').map(d => d.region);
-  const maybeList = DESTINATIONS.filter(d => state.votes[d.id] === 'maybe').map(d => d.region);
-
-  const cityYes = [];
-  Object.keys(state.cityVotes).forEach(countryId => {
-    Object.keys(state.cityVotes[countryId]).forEach(cityId => {
-      if(state.cityVotes[countryId][cityId] === 'yes'){
-        cityYes.push(cityNameById(countryId, cityId));
-      }
-    });
-  });
-
-  summaryBox.innerHTML = `
-    <div class="result-summary">
-      <div><b>Countries — Yes:</b> ${yesList.length ? yesList.join(', ') : '—'}</div>
-      <div><b>Countries — Maybe:</b> ${maybeList.length ? maybeList.join(', ') : '—'}</div>
-      <div><b>Cities — Yes:</b> ${cityYes.length ? cityYes.join(', ') : '—'}</div>
-      ${latestEntry ? `
-        <div style="margin-top:10px;"><b>Days:</b> ${latestEntry.days || '—'}</div>
-        <div><b>Budget:</b> ${latestEntry.budget || '—'}</div>
-        <div><b>When:</b> ${latestEntry.when || '—'}</div>
-        <div><b>Vibe:</b> ${(latestEntry.vibe||[]).join(', ') || '—'}</div>
-        ${latestEntry.notes ? `<div style="margin-top:6px;"><b>Notes:</b> ${escapeHtml(latestEntry.notes)}</div>` : ''}
-      ` : ''}
-    </div>
-  `;
+function countryNameById(countryId){
+  const country = DESTINATIONS.find(d => d.id === countryId);
+  return country ? country.region : countryId;
 }
+
+
 
 function escapeHtml(str){
   const d = document.createElement('div');
@@ -641,7 +822,6 @@ async function load(){
     console.log('No existing data yet, starting fresh');
   }
   renderDestinations();
-  renderSummary();
 }
 
 load();
